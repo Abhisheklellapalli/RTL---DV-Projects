@@ -12,6 +12,8 @@ module alu_4bit_tb;
                .result(result),
                .cout(cout));
   initial begin
+    $dumpfile("dump.vcd");
+    $dumpvars(0, alu_4bit_tb);
     repeat(15) begin
       a = $urandom_range(0,15); 
       b = $urandom_range(0,15);
