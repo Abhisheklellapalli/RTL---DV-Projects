@@ -1,0 +1,59 @@
+📌SystemVerilog Testbench — README Description 🚀
+♦️Overview 📋
+This testbench verifies the 4-bit ALU using a layered, class-based SystemVerilog architecture 🏗️
+Follows the Generator → Driver → Monitor → Scoreboard verification methodology 🔄
+Automatically generates random test cases, applies them to the DUT, captures results, and self-checks pass/fail against a reference model ✅
+Communication between components is handled using mailboxes 📬 (data) and events ⏰ (timing synchronization)
+Architecture Components 🧩
+1. Interface (alui) 🔌
+⚫Bundles all DUT signals (a, b, opcode, result, cout, zero_flag) into a single connection point
+⚫Acts as the bridge between the class-based testbench and the DUT
+2. Transaction (transaction) 📦
+⚫Represents one test case as an object
+⚫Contains randomized stimulus: a, b, opcode 🎲
+⚫Also stores captured DUT response: result, cout (filled in later by the monitor)
+⚫randc is used on opcode for cyclic randomization — ensures all opcode values are covered evenly before repeating
+3. Generator 🎰
+⚫Creates 15 random transaction objects
+⚫Sends each one to the driver via a mailbox
+⚫Represents the stimulus-generation stage of verification
+4. Driver 🚗
+⚫Receives transactions from the generator's mailbox
+⚫Drives a, b, opcode onto the DUT through the virtual interface
+⚫Waits #2 time units for the DUT's combinational logic to settle
+⚫Fires an event (drv_done) 🔔 to signal the monitor that new, stable values are ready to be sampled
+5. Monitor 👀
+⚫Waits for the driver's drv_done event before doing anything (passive observer)
+⚫Once triggered, captures the DUT's actual signals: a, b, opcode, result, cout
+⚫Packages these into a transaction and forwards it to the scoreboard via a separate mailbox
+6. Scoreboard 🧮
+⚫Maintains a reference model (ref_model) — a software re-implementation of expected ALU behavior for every opcode
+⚫Compares the DUT's actual output (from the monitor) against the reference model's expected output
+⚫Tracks and reports PASS ✅ / FAIL ❌ for every transaction
+⚫Maintains running pass_count and fail_count totals
+💠Synchronization: Events vs Mailboxes ⚙️
+Mechanism	Purpose
+⬛Mailbox 📬	Transfers actual data (transaction objects) between components (Generator→Driver, Monitor→Scoreboard)
+⬛Event (drv_done) ⏰	Synchronizes timing — ensures the monitor only samples the DUT right after the driver has applied inputs and the result has settled, avoiding race conditions
+💠Top-Level Module (alu_tb) 🏛️
+⚫Instantiates all four verification components (Generator, Driver, Monitor, Scoreboard)
+⚫Instantiates the DUT (alu_4bit) and connects it via the interface
+⚫Wires up mailboxes and events between components
+⚫Uses fork...join_none to run Driver, Monitor, and Scoreboard concurrently in the background 🔀
+⚫Calls the Generator directly (blocking) so the main thread waits until all 15 transactions are generated
+⚫Adds delay padding (#50) before and after generation to allow the pipeline to fully process all transactions ⏳
+⚫Prints a final test summary 📊 with total pass/fail counts
+⚫Includes $dumpfile/$dumpvars for waveform generation (viewable in EPWave) 📈
+💠Key SystemVerilog Concepts Demonstrated 🎓
+⚫Class-based OOP verification (class, new(), inheritance-ready structure)
+⚫Randomization (rand, randc, randomize()) 🎲
+⚫Mailboxes for inter-process communication 📬
+⚫Events for process synchronization ⏰
+⚫Virtual interfaces to connect class-based components to hardware signals 🔌
+⚫fork...join_none for concurrent process execution 🔀
+⚫Reference-model-based self-checking (automated scoreboard) ✅
+💠How to Run (EDA Playground) ▶️
+Place alu_4bit.v (RTL) in the Design pane
+⚫Place this testbench in the Testbench pane
+⚫Select a simulator supporting class-based SystemVerilog (e.g., Synopsys VCS or Cadence Xcelium) 🖥️
+⚫Enable waveform dump option to view signals in EPWave after running 📉
